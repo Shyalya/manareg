@@ -84,7 +84,7 @@ end
 
 -- Function to start the 5-second rule timer
 local function StartFiveSecondRule()
-    if not ManaRegDB.showManaRegen then return end
+    if not ManaRegDB or not ManaRegDB.showManaRegen then return end
     
     fiveSecondRuleActive = true
     fiveSecondRuleStart = GetTime()
@@ -92,7 +92,7 @@ end
 
 -- Function to update the display
 local function UpdateDisplay()
-    if not ManaRegDB.enabled then
+    if not ManaRegDB or not ManaRegDB.enabled then
         statusBar:Hide()
         return
     end
@@ -121,14 +121,14 @@ local function UpdateDisplay()
     -- Check energy tick status
     if ManaRegDB.showEnergyTick and ShouldTrackEnergy() then
         local timeSinceLastTick = currentTime - lastEnergyTick
-        local timeToNextTick = energyTickTime - timeSinceLastTick
+        local timeToNextTick = energyTickTime - (timeSinceLastTick % energyTickTime)
         
         if timeToNextTick > 0 and timeToNextTick <= energyTickTime then
             if displayText ~= "" then
                 displayText = displayText .. " | "
             end
             displayText = displayText .. string.format("Energy Tick: %.1fs", timeToNextTick)
-            barProgress = math.max(barProgress, timeSinceLastTick / energyTickTime)
+            barProgress = math.max(barProgress, 1 - (timeToNextTick / energyTickTime))
             shouldShow = true
         end
     end
