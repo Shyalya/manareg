@@ -1,0 +1,8 @@
+## Interface: 30300
+## Title: ManaReg
+## Notes: Displays mana regeneration (5-second rule) and energy tick tracking
+## Author: Shyalya
+## Version: 1.0
+## SavedVariables: ManaRegDB
+
+ManaReg.lua
