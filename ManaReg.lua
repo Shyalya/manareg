@@ -23,7 +23,10 @@ local fiveSecondRuleActive = false
 local fiveSecondRuleStart = 0
 local energyTickTime = 2.0 -- Energy ticks every 2 seconds
 local lastEnergyTick = 0
+local lastEnergyAmount = 0
 local playerClass = ""
+local updateThrottle = 0
+local throttleInterval = 0.1 -- Update display every 0.1 seconds
 
 -- Create the UI frame
 local statusBar = CreateFrame("Frame", "ManaRegStatusBar", UIParent)
@@ -148,8 +151,11 @@ local function OnEvent(self, event, ...)
             print("|cff00ff00ManaReg|r loaded. Type /manareg for options.")
         end
     elseif event == "PLAYER_LOGIN" then
-        -- Set initial energy tick time
+        -- Set initial energy tick time and energy amount
         lastEnergyTick = GetTime()
+        if ShouldTrackEnergy() then
+            lastEnergyAmount = UnitPower("player", 3)
+        end
     elseif event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_CHANNEL_START" then
         local unit = ...
         if unit == "player" and ShouldTrackManaRegen() then
@@ -159,11 +165,13 @@ local function OnEvent(self, event, ...)
     elseif event == "UNIT_POWER_UPDATE" then
         local unit, powerType = ...
         if unit == "player" and powerType == "ENERGY" then
-            -- Energy tick detected
+            -- Detect energy tick by checking if energy increased
             local currentEnergy = UnitPower("player", 3) -- 3 = Energy
-            if currentEnergy > 0 then
+            if currentEnergy > lastEnergyAmount then
+                -- Energy increased, likely a tick occurred
                 lastEnergyTick = GetTime()
             end
+            lastEnergyAmount = currentEnergy
         end
     end
 end
@@ -176,9 +184,13 @@ ManaReg:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
 ManaReg:RegisterEvent("UNIT_POWER_UPDATE")
 ManaReg:SetScript("OnEvent", OnEvent)
 
--- OnUpdate handler for smooth display updates
+-- OnUpdate handler for smooth display updates with throttling
 statusBar:SetScript("OnUpdate", function(self, elapsed)
-    UpdateDisplay()
+    updateThrottle = updateThrottle + elapsed
+    if updateThrottle >= throttleInterval then
+        updateThrottle = 0
+        UpdateDisplay()
+    end
 end)
 
 -- Slash command handler

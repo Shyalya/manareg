@@ -12,7 +12,7 @@ A World of Warcraft 3.3.5 (WotLK) addon that tracks mana regeneration (5-second 
 ## Installation
 
 1. Download or clone this repository
-2. Copy the `manareg` folder to your `World of Warcraft/Interface/AddOns/` directory
+2. Copy the `ManaReg` folder to your `World of Warcraft/Interface/AddOns/` directory
 3. Restart WoW or reload UI (`/reload`)
 
 ## Usage
