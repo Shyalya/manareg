@@ -28,6 +28,9 @@ local playerClass = ""
 local updateThrottle = 0
 local throttleInterval = 0.1 -- Update display every 0.1 seconds
 
+-- Constants
+local POWER_TYPE_ENERGY = 3
+
 -- Create the UI frame
 local statusBar = CreateFrame("Frame", "ManaRegStatusBar", UIParent)
 statusBar:SetWidth(200)
@@ -78,13 +81,13 @@ end
 -- Function to check if player should track energy
 local function ShouldTrackEnergy()
     local powerType = UnitPowerType("player")
-    -- Energy users (powerType 3 = Energy)
-    return powerType == 3
+    -- Energy users
+    return powerType == POWER_TYPE_ENERGY
 end
 
 -- Function to start the 5-second rule timer
 local function StartFiveSecondRule()
-    if not ManaRegDB or not ManaRegDB.showManaRegen then return end
+    if not ManaRegDB.showManaRegen then return end
     
     fiveSecondRuleActive = true
     fiveSecondRuleStart = GetTime()
@@ -92,7 +95,7 @@ end
 
 -- Function to update the display
 local function UpdateDisplay()
-    if not ManaRegDB or not ManaRegDB.enabled then
+    if not ManaRegDB.enabled then
         statusBar:Hide()
         return
     end
@@ -154,7 +157,7 @@ local function OnEvent(self, event, ...)
         -- Set initial energy tick time and energy amount
         lastEnergyTick = GetTime()
         if ShouldTrackEnergy() then
-            lastEnergyAmount = UnitPower("player", 3)
+            lastEnergyAmount = UnitPower("player", POWER_TYPE_ENERGY)
         end
     elseif event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_CHANNEL_START" then
         local unit = ...
@@ -166,7 +169,7 @@ local function OnEvent(self, event, ...)
         local unit, powerType = ...
         if unit == "player" and powerType == "ENERGY" then
             -- Detect energy tick by checking if energy increased
-            local currentEnergy = UnitPower("player", 3) -- 3 = Energy
+            local currentEnergy = UnitPower("player", POWER_TYPE_ENERGY)
             if currentEnergy > lastEnergyAmount then
                 -- Energy increased, likely a tick occurred
                 lastEnergyTick = GetTime()
