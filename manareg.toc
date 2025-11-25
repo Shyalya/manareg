@@ -1,0 +1,8 @@
+## Interface: 30300
+## Title: ManaReg
+## Notes: Ressourcenbalken mit 5s-Regel & Tick-Anzeige (Mana/Energie/Rage)
+## Author: Shyalya
+## Version: 0.1.0
+## SavedVariables: ManaRegDB
+
+manareg.lua
