@@ -197,12 +197,12 @@ end
 
 local function OnManaCast(manaSpent)
     if UnitPowerType("player") == 0 and manaSpent and manaSpent > 0 then
-    local now = GetTime()
-    lastManaCastTime = now
+        local now = GetTime()
+        lastManaCastTime = now
         inFiveSecondRule = true
         fsBar:Show(); fsFill:Show(); fsFill:SetWidth(fsBar:GetWidth())
-    -- Mana Tick pausiert während 5s Regel
-    lastManaTickPaused = true
+        manaTickPaused = true
+        haveActiveTickCycle = false
     end
 end
 
@@ -421,6 +421,7 @@ eventFrame:RegisterUnitEvent("UNIT_MAXPOWER", "player")
 eventFrame:RegisterUnitEvent("UNIT_MANA", "player")
 eventFrame:RegisterEvent("UNIT_SPELLCAST_START")
 eventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+eventFrame:RegisterEvent("UNIT_SPELLCAST_INSTANT")
 eventFrame:RegisterEvent("UNIT_COMBO_POINTS")
 eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 eventFrame:RegisterEvent("PLAYER_COMBO_POINTS")
@@ -428,10 +429,32 @@ local preCastMana
 eventFrame:SetScript("OnEvent", function(self, event, unit, ...)
     if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then UpdatePower(); UpdateComboPoints() return end
     if unit == "player" then
-        if event == "UNIT_POWER" or event == "UNIT_MAXPOWER" or event == "UNIT_MANA" or event == "UNIT_ENERGY" or event == "UNIT_RAGE" or event == "UNIT_RUNIC_POWER" then UpdatePower() end
+        if event == "UNIT_POWER" or event == "UNIT_MAXPOWER" or event == "UNIT_MANA" or event == "UNIT_ENERGY" or event == "UNIT_RAGE" or event == "UNIT_RUNIC_POWER" then 
+            UpdatePower()
+            -- Direkt bei UNIT_POWER/UNIT_MANA prüfen ob Mana abnimmt (= Spell gecastet)
+            if (event == "UNIT_POWER" or event == "UNIT_MANA") and UnitPowerType("player") == 0 then
+                local currentMana = UnitPower("player", 0)
+                if lastManaValueForTick > currentMana then
+                    -- Mana ist weniger geworden = Spell gecastet
+                    local spent = lastManaValueForTick - currentMana
+                    if debugEnabled then DEFAULT_CHAT_FRAME:AddMessage("[ManaReg] Mana spent: "..spent) end
+                    OnManaCast(spent)
+                end
+                lastManaValueForTick = currentMana
+            end
+        end
         if event == "UNIT_SPELLCAST_START" and UnitPowerType("player") == 0 then preCastMana = UnitPower("player",0) end
         if event == "UNIT_SPELLCAST_SUCCEEDED" then
             if preCastMana then local spent = preCastMana - UnitPower("player",0); OnManaCast(spent) end
+            preCastMana = nil
+        end
+        if event == "UNIT_SPELLCAST_INSTANT" and UnitPowerType("player") == 0 then
+            local currentMana = UnitPower("player",0)
+            if not preCastMana then preCastMana = currentMana end
+            local spent = preCastMana - currentMana
+            if spent > 0 then
+                OnManaCast(spent)
+            end
             preCastMana = nil
         end
     end
