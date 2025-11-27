@@ -215,6 +215,9 @@ local function StartFiveSecondRule()
     fsBar:Show(); fsFill:Show(); fsFill:SetWidth(fsBar:GetWidth())
     manaTickPaused = true
     haveActiveTickCycle = false
+    lastManaValueForTick = UnitPower("player", 0)
+    manaTickStartTime = now
+    if debugEnabled then DEFAULT_CHAT_FRAME:AddMessage("[ManaReg] 5s Regel gestartet") end
 end
 
 local function UpdateComboPoints()
@@ -340,9 +343,6 @@ frame:SetScript("OnUpdate", function(self, elapsed)
             if current == maxMana then
                 manaTickPaused = true
                 haveActiveTickCycle = false
-            elseif current < lastPowerValue and not inFiveSecondRule then
-                -- Mana wurde verbraucht -> starte 5s Regel
-                StartFiveSecondRule()
             elseif current < maxMana and not inFiveSecondRule and manaTickPaused then
                 manaTickPaused = false
                 -- warten auf erste Regeneration bevor Balken wirklich läuft
@@ -370,19 +370,11 @@ frame:SetScript("OnUpdate", function(self, elapsed)
     if pType == 0 and not inFiveSecondRule and not manaTickPaused then
         local manaNow = UnitPower("player",0)
         if manaNow > lastManaValueForTick then
-            -- Mana Anstieg erkannt -> möglicher Tick
-            local nowTime = now
+            -- Mana Anstieg erkannt -> Tick-Zyklus starten
             if not haveActiveTickCycle then
                 haveActiveTickCycle = true
-                manaTickStartTime = nowTime
-                lastDetectedManaRegen = nowTime
-            else
-                local since = nowTime - lastDetectedManaRegen
-                if since >= 1.5 then
-                    -- akzeptiere neue Tick-Startzeit (sicher <2s aber >1.5s um falsche Mini-Anstiege zu ignorieren)
-                    manaTickStartTime = nowTime
-                    lastDetectedManaRegen = nowTime
-                end
+                manaTickStartTime = now
+                if debugEnabled then DEFAULT_CHAT_FRAME:AddMessage("[ManaReg] Tick-Zyklus gestartet") end
             end
         end
         lastManaValueForTick = manaNow
